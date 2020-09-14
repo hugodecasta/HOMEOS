@@ -1,13 +1,15 @@
 let { LocalObject, RemoteObject } = require('./object_system')
 
-let port = parseInt(Math.random() * 7000) + 1000
-let name = 'Kinect' + Math.random()
+// ----------- LOCAL OBJECT
 
-let kinect = new LocalObject(name, port)
+let clock = new LocalObject('clock', 8000)
+let time = 0
 setInterval(() => {
-    kinect.put({ hello: name })
-}, 100)
+    clock.put(time++)
+}, 1000)
 
-let rkinect = new RemoteObject(name, function (data) {
-    console.log('YOLO', data)
+// ----------- REMOTE OBJECT
+
+let r_clock = new RemoteObject('clock', function (time) {
+    console.log('CURRENT TIME', time)
 })
