@@ -1,0 +1,72 @@
+// -------------------------------------------------------------------- OBJECT DNS
+
+const dgram = require('dgram')
+const local_udp = dgram.createSocket('udp4')
+let local_map = {}
+local_udp.on('error', function (err) {
+})
+local_udp.on('message', function (input, sender) {
+    let data = JSON.parse(input.toString())
+    if (data == null) {
+        local_udp.send(JSON.stringify(local_map), sender.port, sender.address)
+    } else if (data.register) {
+        local_map[data.register.name] = { port: data.register.port, address: sender.address }
+    } else if (data.kill) {
+        delete local_map[data.kill]
+    }
+})
+local_udp.bind(3773)
+
+function register_me(name, port) {
+    let data = { register: { name, port } }
+    local_udp.send(JSON.stringify(data), 3773, '')
+}
+function request_map() {
+    let requester = dgram.createSocket('udp4')
+    requester.send('null', 3773, '')
+    requester.on('message', function (input, sender) {
+        let data = JSON.parse(input.toString())
+        for (let name in data) local_map[name] = data[name]
+        requester.close()
+    })
+}
+
+// -------------------------------------------------------------------- LOCAL OBJECT
+
+const io = require("socket.io")
+
+class LocalObject {
+    constructor(name, port = 8000) {
+        this.server = io.listen(port)
+        setTimeout(() => {
+            register_me(name, port)
+        }, 100)
+    }
+    put(data) {
+        this.server.emit('put', data)
+    }
+}
+
+// -------------------------------------------------------------------- REMOTE OBJECT
+
+const ioclient = require("socket.io-client")
+
+class RemoteObject {
+    constructor(name, callback) {
+        this.client = null
+        let int = setInterval(() => {
+            let remote = local_map[name]
+            if (!remote) {
+                request_map()
+            } else {
+                clearInterval(int)
+                this.client = ioclient.connect(`http://${remote.address}:${remote.port}`)
+                this.client.on('put', callback)
+            }
+        }, 100)
+    }
+}
+
+// -------------------------------------------------------------------- EXPORTS
+
+module.exports = { LocalObject, RemoteObject }
