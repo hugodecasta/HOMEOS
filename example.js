@@ -10,6 +10,6 @@ setInterval(() => {
 
 // ----------- REMOTE OBJECT
 
-let r_clock = new RemoteObject('clock', function (time) {
+new RemoteObject('clock', function (time) {
     console.log('CURRENT TIME', time)
 })

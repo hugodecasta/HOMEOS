@@ -24,7 +24,9 @@
   },
   "homepage": "https://github.com/hugodecasta/HOMEOS#readme",
   "dependencies": {
+    "kasa_control": "^0.1.0",
     "socket.io": "^2.3.0",
-    "socket.io-client": "^2.3.0"
+    "socket.io-client": "^2.3.0",
+    "tplink-lightbulb": "^1.5.3"
   }
 }
