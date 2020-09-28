@@ -34,15 +34,34 @@ function request_map() {
 // -------------------------------------------------------------------- LOCAL OBJECT
 
 const io = require("socket.io")
+const express = require('express')
+const cors = require('cors')
 
 class LocalObject {
-    constructor(name, port = 8000) {
+    constructor(name, port, advice_callback = () => { }) {
+        this.data = null
+        this.webserver = express()
+        this.webserver.use(cors())
         this.server = io.listen(port)
-        setTimeout(() => {
-            register_me(name, port)
-        }, 100)
+        setTimeout(() => { register_me(name, port) }, 100)
+        this.__setup_webserver(advice_callback)
+        this.webserver.listen(port + 1)
+        this.server.on('connect', (client) => { client.on('advice', advice_callback) })
+    }
+    __setup_webserver(advice_callback) {
+        this.webserver.get('/', (_, res) => { res.json(this.data) })
+        this.webserver.post('/', (req, _, next) => {
+            req.body = ''
+            req.setEncoding('utf8')
+            req.on('data', function (chunk) { req.body += chunk })
+            req.on('end', function () {
+                req.body = JSON.parse(req.body)
+                next()
+            })
+        }, (req, res) => { res.json(advice_callback(req.body)) })
     }
     put(data) {
+        this.data = data
         this.server.emit('put', data)
     }
 }
@@ -65,8 +84,11 @@ class RemoteObject {
             }
         }, 100)
     }
+    advice(data) {
+        this.client.emit('advice', data)
+    }
 }
 
 // -------------------------------------------------------------------- EXPORTS
 
-module.exports = { LocalObject, RemoteObject }
+module.exports = { LocalObject, RemoteObject, local_map }

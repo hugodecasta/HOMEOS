@@ -2,7 +2,7 @@ var Kinect2 = require('kinect2')
 let { LocalObject, RemoteObject } = require('./object_system')
 
 var kinect = new Kinect2()
-let kinect_online = new LocalObject('kinect')
+let kinect_online = new LocalObject('kinect', 8000)
 
 if (kinect.open()) {
     console.log('Kinect opened !')
