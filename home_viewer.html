@@ -1,14 +1,48 @@
-<script src='http://localhost:8000/socket.io/socket.io.js'></script>
+<html>
 
-<script>
-    const state = io.connect('http://localhost:9876');
-    const kinect = io.connect('http://localhost:8000');
-    state.on('put', (state) => {
-        console.log('state', state)
-    })
-    function setpoint(name, to) {
-        setTimeout(() => {
-            state.emit('advice', name)
-        }, to)
-    }
-</script>
+
+<head>
+    <title>Home Viewer</title>
+</head>
+
+<body>
+
+    <!--- ------------------------------------------------------------------ -->
+
+    <h2 class='state' id='state'>no state</h2>
+    <input id='state_input'><button onclick="set_state()">set state</button>
+
+    <!--- ------------------------------------------------------------------ -->
+
+    <script src='http://192.168.43.214:8000/socket.io/socket.io.js'></script>
+    <script>
+        class RObject {
+            constructor(port, callback = () => { }) {
+                this.socket = io.connect('http://192.168.43.214:' + port)
+                this.socket.on('put', callback)
+            }
+            poke(data) {
+                this.socket.emit('poke')
+            }
+            advice(data) {
+                this.socket.emit('advice', data)
+            }
+        }
+        let kinect = new RObject(8000)
+        let state = new RObject(9876, (state) => {
+            document.getElementById('state').innerHTML = state
+        })
+        state.poke()
+        function setpoint(name) {
+            state.advice(name)
+        }
+
+        function set_state() {
+            let name = document.getElementById('state_input').value
+            setpoint(name)
+        }
+    </script>
+
+</body>
+
+</html>

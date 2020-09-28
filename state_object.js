@@ -1,13 +1,23 @@
-let { LocalObject, RemoteObject } = require('./object_system')
+const { LocalObject, RemoteObject } = require('./object_system')
+const fs = require('fs')
 
 // ----------- DATA
 
 var state_points = []
 
+let point_data_path = __dirname + '/state_point_data.json'
+if (fs.existsSync(point_data_path)) {
+    state_points = JSON.parse(fs.readFileSync(point_data_path))
+    console.log('loaded points', state_points
+        .map(point => '"' + point.name + '"')
+        .filter((name, index, self) => self.indexOf(name) == index).join(', ')
+    )
+}
+
 // ----------- METHODS
 
 function save_points() {
-
+    fs.writeFileSync(point_data_path, JSON.stringify(state_points))
 }
 
 function add_point(name) {
@@ -25,6 +35,7 @@ function add_point(name) {
         console.log('adding point', '"' + name + '"')
         state_points.push({ name, pos: neck })
     }
+    save_points()
 }
 
 function get_nearest(pos) {

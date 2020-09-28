@@ -46,7 +46,10 @@ class LocalObject {
         setTimeout(() => { register_me(name, port) }, 100)
         this.__setup_webserver(advice_callback)
         this.webserver.listen(port + 1)
-        this.server.on('connect', (client) => { client.on('advice', advice_callback) })
+        this.server.on('connect', (client) => {
+            client.on('advice', advice_callback)
+            client.on('poke', () => this.put(this.data))
+        })
     }
     __setup_webserver(advice_callback) {
         this.webserver.get('/', (_, res) => { res.json(this.data) })
@@ -83,6 +86,9 @@ class RemoteObject {
                 this.client.on('put', callback)
             }
         }, 100)
+    }
+    poke() {
+        this.client.emit('poke')
     }
     advice(data) {
         this.client.emit('advice', data)
