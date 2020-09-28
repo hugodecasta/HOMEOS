@@ -74,8 +74,9 @@ class LocalObject {
 const ioclient = require("socket.io-client")
 
 class RemoteObject {
-    constructor(name, callback) {
+    constructor(name, callback = () => { }) {
         this.client = null
+        this.data = null
         let int = setInterval(() => {
             let remote = local_map[name]
             if (!remote) {
@@ -83,7 +84,7 @@ class RemoteObject {
             } else {
                 clearInterval(int)
                 this.client = ioclient.connect(`http://${remote.address}:${remote.port}`)
-                this.client.on('put', callback)
+                this.client.on('put', (data) => { this.data = data; callback(data) })
             }
         }, 100)
     }

@@ -61,6 +61,7 @@ let neck = null
 let old_state = null
 new RemoteObject('kinect', function (necks) {
     neck = necks[0] ?? neck
+    if (!neck) return
     let nearest = get_nearest(neck)
     if (!nearest) return
     let state = nearest.name

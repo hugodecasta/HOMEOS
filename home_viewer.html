@@ -3,6 +3,15 @@
 
 <head>
     <title>Home Viewer</title>
+    <style>
+        .plug.on {
+            background: #0f0;
+        }
+
+        .plug.off {
+            background: #555;
+        }
+    </style>
 </head>
 
 <body>
@@ -11,6 +20,9 @@
 
     <h2 class='state' id='state'>no state</h2>
     <input id='state_input'><button onclick="set_state()">set state</button>
+
+    <div id='plugs'></div>
+    <button onclick="record_control()">record</button>
 
     <!--- ------------------------------------------------------------------ -->
 
@@ -28,11 +40,36 @@
                 this.socket.emit('advice', data)
             }
         }
+
+        function setup_plug(name, state) {
+            let html = document.getElementById(name.replace(' ', '_'))
+            if (!html) {
+                html = document.createElement('button')
+                html.setAttribute('id', name.replace(' ', '_'))
+                html.innerHTML = name
+                document.getElementById('plugs').appendChild(html)
+                html.addEventListener('click', () => { plugs.advice(name) })
+            }
+            html.setAttribute('class', 'plug ' + (state ? 'on' : 'off'))
+        }
+
         let kinect = new RObject(8000)
+        let plug_control = new RObject(8764)
+        let plugs = new RObject(5985, (devices_state) => {
+            for (let plug_name in devices_state) {
+                setup_plug(plug_name, devices_state[plug_name])
+            }
+        })
         let state = new RObject(9876, (state) => {
             document.getElementById('state').innerHTML = state
         })
+
+        function record_control() {
+            plug_control.advice()
+        }
+
         state.poke()
+        plugs.poke()
         function setpoint(name) {
             state.advice(name)
         }
