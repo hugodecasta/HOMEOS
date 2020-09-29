@@ -2,6 +2,7 @@
 
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Viewer</title>
     <style>
         .plug.on {
@@ -19,10 +20,12 @@
     <!--- ------------------------------------------------------------------ -->
 
     <h2 class='state' id='state'>no state</h2>
-    <input id='state_input'><button onclick="set_state()">set state</button>
+    <input id='state_input'><button onclick="set_state()">set state</button><button
+        onclick="reset_state()">reset</button>
 
     <div id='plugs'></div>
     <button onclick="record_control()">record</button>
+    <button onclick="reset_control()">reset</button>
 
     <!--- ------------------------------------------------------------------ -->
 
@@ -60,12 +63,20 @@
                 setup_plug(plug_name, devices_state[plug_name])
             }
         })
-        let state = new RObject(9876, (state) => {
-            document.getElementById('state').innerHTML = state
+        let state = new RObject(9876, (states) => {
+            document.getElementById('state').innerHTML = states.join(', ')
         })
 
+        function reset_state() {
+            state.advice('#reset')
+        }
+
         function record_control() {
-            plug_control.advice()
+            plug_control.advice('record_state')
+        }
+
+        function reset_control() {
+            plug_control.advice('reset_all')
         }
 
         state.poke()

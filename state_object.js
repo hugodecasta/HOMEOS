@@ -21,6 +21,7 @@ function save_points() {
 }
 
 function add_point(name) {
+    let neck = saved_necks[0]
     if (!neck) return
     if (name.includes('!')) {
         let del_name = name.replace('!', '')
@@ -49,25 +50,45 @@ function get_nearest(pos) {
     return point_dist.reduce((nearest, cur) => !nearest || nearest.dist > cur.dist ? cur : nearest, null)
 }
 
+function eqSet(as, bs) {
+    if (as.size !== bs.size) return false;
+    for (var a of as) if (!bs.has(a)) return false;
+    return true;
+}
+
 // ----------- STATE OBJ
 
 let state_obj = new LocalObject('state', 9876, (name) => {
+    if (name == '#reset') {
+        state_points = []
+        save_points()
+        return
+    }
     add_point(name)
 })
 
 // ----------- KINECT
 
-let neck = null
-let old_state = null
+let old_states = new Set([])
+let saved_necks = []
+
 new RemoteObject('kinect', function (necks) {
-    neck = necks[0] ?? neck
-    if (!neck) return
-    let nearest = get_nearest(neck)
-    if (!nearest) return
-    let state = nearest.name
-    if (state != old_state) {
-        state_obj.put(state)
-        old_state = state
+
+    if (!necks.length) return
+    saved_necks = necks
+
+    let states = []
+    for (let neck of necks) {
+        let nearest = get_nearest(neck)
+        if (!nearest) continue
+        let state = nearest.name
+        states.push(state)
+    }
+    states = new Set(states)
+
+    if (!eqSet(states, old_states)) {
+        state_obj.put(Array.from(states))
+        old_states = states
     }
 })
 

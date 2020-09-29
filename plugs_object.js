@@ -3,9 +3,10 @@ let { LocalObject } = require('./object_system')
 // ----------- LOCAL OBJECT
 
 let devices = {
-    'grande lampe': false,
+    'lampe salon': false,
     'lampe lit': false,
     'lampe cuisine': false,
+    'lampe entrée': false,
 }
 
 let plugs = null
