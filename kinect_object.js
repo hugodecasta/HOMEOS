@@ -10,11 +10,7 @@ function point_dist(p1, p2) {
         .reduce((a, b) => a + b, 0))
 }
 
-let state_necks = [{
-    x: 0.14827169477939606,
-    y: 3.9644811153411865,
-    z: 0.7495285868644714
-}]
+let state_necks = []
 const movement_size_range = 1.2
 
 function handle_necks(in_necks) {

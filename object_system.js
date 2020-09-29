@@ -85,6 +85,7 @@ class RemoteObject {
                 clearInterval(int)
                 this.client = ioclient.connect(`http://${remote.address}:${remote.port}`)
                 this.client.on('put', (data) => { this.data = data; callback(data) })
+                this.poke()
             }
         }, 100)
     }

@@ -16,7 +16,14 @@ function toggle_light(device_to_toggle) {
     plugs.put(devices)
 }
 
-plugs = new LocalObject('plugs', 5985, toggle_light)
+plugs = new LocalObject('plugs', 5985, (instr) => {
+    if ('devices' in instr) {
+        devices = instr.devices
+        plugs.put(devices)
+    } else if ('device_name' in instr) {
+        toggle_light(instr.device_name)
+    }
+})
 plugs.put(devices)
 
 // ----------- MAIN

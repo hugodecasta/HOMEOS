@@ -12,6 +12,10 @@
         .plug.off {
             background: #555;
         }
+
+        .plug.waiting {
+            opacity: 0.5
+        }
     </style>
 </head>
 
@@ -19,13 +23,7 @@
 
     <!--- ------------------------------------------------------------------ -->
 
-    <h2 class='state' id='state'>no state</h2>
-    <input id='state_input'><button onclick="set_state()">set state</button><button
-        onclick="reset_state()">reset</button>
-
     <div id='plugs'></div>
-    <button onclick="record_control()">record</button>
-    <button onclick="reset_control()">reset</button>
 
     <!--- ------------------------------------------------------------------ -->
 
@@ -33,8 +31,16 @@
     <script>
         class RObject {
             constructor(port, callback = () => { }) {
+                this.data = null
                 this.socket = io.connect('http://192.168.43.214:' + port)
-                this.socket.on('put', callback)
+                this.socket.on('put', (data) => {
+                    this.data = data
+                    callback(data)
+                })
+                this.socket.on('connect_error', (err) => {
+                    this.socket.close()
+                    console.log('object closed')
+                })
             }
             poke(data) {
                 this.socket.emit('poke')
@@ -44,6 +50,17 @@
             }
         }
 
+        let to = null
+        function handle_plug(device_name) {
+            clearTimeout(to)
+            plugs.advice({ device_name })
+            state_learner.advice('learn')
+            to = setTimeout(() => {
+                state_learner.advice('point')
+                state_learner.advice('act')
+            }, 2000)
+        }
+
         function setup_plug(name, state) {
             let html = document.getElementById(name.replace(' ', '_'))
             if (!html) {
@@ -51,44 +68,28 @@
                 html.setAttribute('id', name.replace(' ', '_'))
                 html.innerHTML = name
                 document.getElementById('plugs').appendChild(html)
-                html.addEventListener('click', () => { plugs.advice(name) })
+                html.addEventListener('click', () => {
+                    html.setAttribute('class', 'plug waiting ' + (plugs.data[name] ? 'off' : 'on'))
+                    handle_plug(name)
+                })
             }
             html.setAttribute('class', 'plug ' + (state ? 'on' : 'off'))
         }
 
         let kinect = new RObject(8000)
-        let plug_control = new RObject(8764)
         let plugs = new RObject(5985, (devices_state) => {
             for (let plug_name in devices_state) {
                 setup_plug(plug_name, devices_state[plug_name])
             }
         })
-        let state = new RObject(9876, (states) => {
-            document.getElementById('state').innerHTML = states.join(', ')
-        })
-
-        function reset_state() {
-            state.advice('#reset')
-        }
-
-        function record_control() {
-            plug_control.advice('record_state')
-        }
-
-        function reset_control() {
-            plug_control.advice('reset_all')
-        }
-
-        state.poke()
         plugs.poke()
-        function setpoint(name) {
-            state.advice(name)
-        }
 
-        function set_state() {
-            let name = document.getElementById('state_input').value
-            setpoint(name)
-        }
+        let learning = null
+        let state_learner = new RObject(9876, (data) => {
+            learning = data.is_learning
+        })
+        state_learner.poke()
+
     </script>
 
 </body>
