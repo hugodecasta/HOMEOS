@@ -41,6 +41,67 @@
             pointer-events: none;
             opacity: 0.5;
         }
+
+        .plan {
+            border: 1px solid #000;
+            margin: 3px;
+        }
+
+        .plan>div {
+            padding: 5px;
+            display: inline-block;
+        }
+
+        .plan .at {
+            background: #000;
+            color: #fff;
+            font-family: monospace;
+        }
+
+        .plan .action {
+            position: relative;
+            border: 1px solid #555;
+            margin: 0 2px;
+            font-size: 10px;
+            border-radius: 5px;
+            top: -1px;
+        }
+
+        .plan .action.on {
+            background: #afa;
+        }
+
+        .plan .action.off {
+            background: #faa;
+        }
+
+        .plan .schedule {
+            animation: blink 1s infinite;
+        }
+
+        .plan .schedule.waiting {
+            opacity: 0.5;
+            animation: none;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes blink {
+            0% {
+                background: #fdf;
+            }
+
+            50% {
+                background: #f5f;
+            }
+
+            100% {
+                background: #fdf;
+            }
+        }
     </style>
 </head>
 
@@ -48,18 +109,25 @@
 
     <!--- ------------------------------------------------------------------ -->
 
+    <button id='view_button' onclick='change_view()'>View planning</button>
     <button id='en_btn' onclick='press_en_btn()'>enable</button>
+    <button id='scene_btn' onclick='press_scene_btn()'>launch scene</button>
     <br><br>
     <div id='action_panel' class='disabled'>
         <div id='plugs'></div>
         <br>
         <button onclick='kinect.advice("reset")'>reset detections</button>
         <button onclick='if(confirm("reset config ?"))state_learner.advice("reset")'>reset light config</button>
-        <br>
+        <button onclick='if(confirm("reset scene planning ?"))scene.advice({action:"reset"})'>reset scene</button>
+        <br><br>
         <button onclick='trace = !trace'>Trace</button>
         <button onclick='if(confirm("reset points ?")){points=[];localStorage.setItem("points","[]")}'>reset
             points</button>
         <h3 id='persons'>waiting for kinect data ...</h3>
+    </div>
+    <div id='planning_panel' class='hidden'>
+        <div id="planning"></div>
+        <button onclick="add_plan()">add plan</button>
     </div>
 
 
@@ -68,6 +136,8 @@
     <script src='http://82.65.250.203:1346/socket.io/socket.io.js'></script>
     <script>
 
+        // ----------------------------------------- UTILS
+
         function clone(obj) {
             return JSON.parse(JSON.stringify(obj))
         }
@@ -75,6 +145,29 @@
         function str(obj) {
             return JSON.stringify(obj)
         }
+
+        function addz(nb_str) {
+            if (nb_str < 10) return '0' + nb_str
+            return nb_str
+        }
+
+        // ----------------------------------------- VIEW
+        let current_view = 'persons'
+        function change_view() {
+            current_view = current_view == 'persons' ? 'planning' : 'persons'
+            if (current_view == 'persons') {
+                document.getElementById('planning_panel').classList.add('hidden')
+                document.getElementById('persons').classList.remove('hidden')
+                document.getElementById('view_button').innerHTML = 'View planning'
+            } else {
+                document.getElementById('persons').classList.add('hidden')
+                document.getElementById('planning_panel').classList.remove('hidden')
+                document.getElementById('view_button').innerHTML = 'View persons'
+            }
+        }
+        change_view()
+
+        // ----------------------------------------- EXPOSER
 
         class Exposer {
             constructor() {
@@ -97,9 +190,10 @@
                 if (!this.handlers[name]) this.handlers[name] = []
                 this.handlers[name].push(handler)
             }
-            poke(name) {
+            poke(name, action = null) {
                 setTimeout(() => {
                     this.exposer.emit('advice', { action: 'poke', name })
+                    if (action) action()
                 }, 500)
             }
             advice(name, advice) {
@@ -110,7 +204,7 @@
                 let obj = {
                     on_data: handler,
                     data: null,
-                    poke: () => this.poke(name),
+                    poke: (action = null) => this.poke(name, action),
                     advice: (advice) => this.advice(name, advice)
                 }
                 this.register_handler(name, (data) => {
@@ -123,9 +217,45 @@
 
         const exp = new Exposer()
 
+        // ----------------------------------------- MORE DATA
+
         let trace = false
-        let enabled = true
         let points = JSON.parse(localStorage.getItem('points') ?? '[]')
+
+        // ----------------------------------------- KINECT
+
+        var pos_mult = 90
+        var pos_offset = 100
+        var trace_timer = 1
+        var trace_time = 1
+        let kinect = exp.register('kinect', (necks) => {
+            if (!necks) return
+            if (trace && --trace_time == 0) {
+                let { x, y } = necks[0]
+                points.push([x, y])
+                localStorage.setItem('points', JSON.stringify(points))
+                trace_time = trace_timer
+            }
+            let persons = document.getElementById('persons')
+            persons.innerHTML = ''
+            points.forEach(point => {
+                let [x, y] = point
+                let point_html = document.createElement('div')
+                point_html.setAttribute('class', 'point')
+                point_html.setAttribute('style', 'top:' + y * pos_mult + 'px;left:' + (x * pos_mult + pos_offset) + 'px')
+                persons.appendChild(point_html)
+            });
+            let strs = necks.map(neck => {
+                let { x, y, detected } = neck
+                let person = document.createElement('div')
+                person.innerHTML = detected ? '😀' : '👻'
+                person.setAttribute('class', 'person')
+                person.setAttribute('style', 'top:' + y * pos_mult + 'px;left:' + (x * pos_mult + pos_offset) + 'px')
+                persons.appendChild(person)
+            })
+        })
+
+        // ----------------------------------------- PLUGS
 
         let to = null
         function handle_plug(device_name) {
@@ -154,51 +284,27 @@
             html.setAttribute('class', 'plug ' + (state ? 'on' : 'off'))
         }
 
-        function update_enable_button() {
-            document.getElementById('en_btn').innerHTML = enabled ? 'disable' : 'enable'
-            document.getElementById('action_panel').setAttribute('class', enabled ? '' : 'disabled')
-        }
-
-        function press_en_btn() {
-            state_learner.advice(enabled ? 'disable' : 'enable')
-        }
-
-        var pos_mult = 90
-        var pos_offset = 100
-        var trace_timer = 1
-        var trace_time = 1
-        let kinect = exp.register('kinect', (necks) => {
-            if (!necks) return
-            if (trace && --trace_time == 0) {
-                let { x, y } = necks[0]
-                points.push([x, y])
-                localStorage.setItem('points', JSON.stringify(points))
-                trace_time = trace_timer
-            }
-            let persons = document.getElementById('persons')
-            persons.innerHTML = ''
-            let strs = necks.map(neck => {
-                let { x, y, detected } = neck
-                let person = document.createElement('div')
-                person.innerHTML = detected ? '😀' : '👻'
-                person.setAttribute('class', 'person')
-                person.setAttribute('style', 'top:' + y * pos_mult + 'px;left:' + (x * pos_mult + pos_offset) + 'px')
-                persons.appendChild(person)
-            })
-            points.forEach(point => {
-                let [x, y] = point
-                let point_html = document.createElement('div')
-                point_html.setAttribute('class', 'point')
-                point_html.setAttribute('style', 'top:' + y * pos_mult + 'px;left:' + (x * pos_mult + pos_offset) + 'px')
-                persons.appendChild(point_html)
-            });
-        })
+        let known_plugs = []
         let plugs = exp.register('plugs', (devices_state) => {
+            known_plugs = Object.keys(devices_state)
             for (let plug_name in devices_state) {
                 setup_plug(plug_name, devices_state[plug_name])
             }
         })
         plugs.poke()
+
+        // ----------------------------------------- STATE LEARNER
+
+        let enabled = true
+
+        function press_en_btn() {
+            state_learner.advice(enabled ? 'disable' : 'enable')
+        }
+
+        function update_enable_button() {
+            document.getElementById('en_btn').innerHTML = enabled ? 'disable' : 'enable'
+            document.getElementById('action_panel').setAttribute('class', enabled ? '' : 'disabled')
+        }
 
         let learning = null
         let state_learner = exp.register('state_learner', (data) => {
@@ -206,7 +312,122 @@
             update_enable_button()
             learning = data.is_learning
         })
-        state_learner.poke()
+        state_learner.poke(update_enable_button)
+
+        // ----------------------------------------- SCENE
+
+        let scene_launched = false
+        function press_scene_btn() {
+            scene.advice({ action: scene_launched ? 'disable' : 'enable' })
+        }
+
+        function update_scene_button() {
+            document.getElementById('scene_btn').innerHTML = scene_launched ? 'stop scene' : 'launch scene'
+        }
+
+        function add_plan() {
+            let hours = prompt('hours', '09')
+            if (!hours) return
+            hours = parseInt(hours)
+            let minutes = prompt('minutes', '35')
+            if (!minutes) return
+            minutes = parseInt(minutes)
+            let radius = prompt('plus minus (minutes)', '15')
+            if (!radius) return
+            radius = parseInt(radius)
+            let action_count = prompt('number of actions', 1)
+            if (!action_count) return
+            action_count = parseInt(action_count)
+            let actions = []
+            for (let i = 0; i < action_count; ++i) {
+                let plug = prompt('[' + i + '] plug name', known_plugs[0])
+                while (!known_plugs.includes(plug) && plug) {
+                    if (!confirm('must chooses from ' + known_plugs.join(', '))) return
+                    plug = prompt('[' + i + '] plug name', known_plugs[0])
+                }
+                if (!plug) return
+                let action = prompt('[' + i + '] action (on / off)', 'on')
+                if (!action) return
+                action = action == 'on'
+                actions.push({ plug, action })
+            }
+            let proba = prompt('probability (in %)', 100)
+            if (!proba) return
+            proba = parseInt(proba) / 100
+            let plan = { hours, minutes, radius, proba, actions }
+            scene.advice({ action: 'new plan', plan })
+        }
+
+        function create_simple_div(text, classes) {
+            let div = document.createElement('div')
+            div.setAttribute('class', classes)
+            div.innerHTML = text
+            return div
+        }
+
+        function create_plan(plan, scheduled = null) {
+            let { uuid, hours, minutes, radius, proba, actions } = plan
+            let plan_html = document.createElement('div')
+            plan_html.classList.add('plan')
+            let radius_min = parseInt(radius)
+            let time_display = addz(hours) + ':' + addz(minutes)
+            let at_str = `${time_display}`
+            if (radius_min > 0) {
+                at_str += ` ± ${radius_min} min`
+            }
+            if (proba != 1) {
+                at_str += ' (' + parseInt(proba * 100) + '%)'
+            }
+            let at = create_simple_div(at_str, 'at')
+            plan_html.appendChild(at)
+            actions.forEach(action_elm => {
+                let { plug, action } = action_elm
+                let action_html = create_simple_div(plug, 'action ' + (action ? 'on' : 'off'))
+                plan_html.appendChild(action_html)
+            })
+
+            if (scheduled) {
+                let { time, will_occur } = scheduled
+                let schedule_time = new Date(time)
+                let [day, month, year, hours, minuts] = [
+                    schedule_time.getDate(),
+                    schedule_time.getMonth(),
+                    schedule_time.getFullYear(),
+                    schedule_time.getHours(),
+                    schedule_time.getMinutes(),
+                ]
+                let display_date = `${addz(day)}/${addz(month + 1)}/${year} ${addz(hours)}:${addz(minutes)}`
+                let text = will_occur ? 'scheduled for ' + display_date : 'will not occur'
+                let schedule_html = create_simple_div(text, 'schedule ' + (!scene_launched ? 'waiting' : ''))
+                plan_html.appendChild(schedule_html)
+            }
+
+            let delete_btn = document.createElement('button')
+            delete_btn.innerHTML = 'delete'
+            plan_html.appendChild(delete_btn)
+            delete_btn.onclick = () => scene.advice({ action: 'remove plan', uuid })
+            return plan_html
+        }
+
+        function setup_planning(planning, schedule) {
+            let planning_html = document.getElementById('planning')
+            planning_html.innerHTML = ''
+            Object.values(planning).sort((a, b) => {
+                let { hours: ha, minutes: ma } = a
+                let { hours: hb, minutes: mb } = b
+                let score_a = ha + (ma / 60)
+                let score_b = hb + (mb / 60)
+                return score_a - score_b
+            }).forEach(plan => planning_html.appendChild(create_plan(plan, schedule[plan.uuid])))
+        }
+
+        let scene = exp.register('scene', (data) => {
+            let { enabled, planning, schedule } = data
+            scene_launched = enabled
+            setup_planning(planning, schedule)
+            update_scene_button()
+        })
+        scene.poke(update_scene_button)
 
     </script>
 

@@ -25,7 +25,6 @@ fs.writeFileSync(recording_file_path, '')
 let kinect_online = new LocalObject('kinect', 8000, (advice) => {
     return ({
         'reset': () => {
-            console.log('KINECT RESET')
             state_necks = []
         },
         'stop': () => {

@@ -61,6 +61,8 @@ plugs = new LocalObject('plugs', 5985, async (instr) => {
         devices = instr.devices
     } else if ('device_name' in instr) {
         devices[instr.device_name] = !devices[instr.device_name]
+    } else if ('state' in instr) {
+        devices[instr.device_name] = instr.state
     }
     update_all()
 })
