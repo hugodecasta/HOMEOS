@@ -38,7 +38,7 @@ const express = require('express')
 const cors = require('cors')
 
 class LocalObject {
-    constructor(name, port, advice_callback = () => { }) {
+    constructor(name, port, advice_callback = () => { }, poke_behavior = null) {
         this.data = null
         this.webserver = express()
         this.webserver.use(cors())
@@ -48,7 +48,10 @@ class LocalObject {
         this.webserver.listen(port + 1)
         this.server.on('connect', (client) => {
             client.on('advice', advice_callback)
-            client.on('poke', () => this.put(this.data))
+            client.on('poke', () => {
+                if (poke_behavior) poke_behavior()
+                else this.put(this.data)
+            })
         })
     }
     __setup_webserver(advice_callback) {
@@ -75,6 +78,7 @@ const ioclient = require("socket.io-client")
 
 class RemoteObject {
     constructor(name, callback = () => { }) {
+        this.name = name
         this.client = null
         this.data = null
         let int = setInterval(() => {

@@ -16,6 +16,31 @@
         .plug.waiting {
             opacity: 0.5
         }
+
+        #persons {
+            position: relative;
+            transform-origin: top left;
+            transform: rotate(-34deg) translate(-71px, -18px);
+        }
+
+        .person {
+            position: absolute;
+            transform: rotate(34deg);
+        }
+
+        .point {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #555;
+            border-radius: 1000px;
+            transform: translate(-5px, -5px);
+        }
+
+        .disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
     </style>
 </head>
 
@@ -23,32 +48,80 @@
 
     <!--- ------------------------------------------------------------------ -->
 
-    <div id='plugs'></div>
+    <button id='en_btn' onclick='press_en_btn()'>enable</button>
+    <br><br>
+    <div id='action_panel' class='disabled'>
+        <div id='plugs'></div>
+        <br>
+        <button onclick='kinect.advice("reset")'>reset detections</button>
+        <button onclick='if(confirm("reset config ?"))state_learner.advice("reset")'>reset light config</button>
+        <br>
+        <button onclick='trace = !trace'>Trace</button>
+        <button onclick='if(confirm("reset points ?")){points=[];localStorage.setItem("points","[]")}'>reset
+            points</button>
+        <h3 id='persons'>waiting for kinect data ...</h3>
+    </div>
+
 
     <!--- ------------------------------------------------------------------ -->
 
-    <script src='http://192.168.43.214:8000/socket.io/socket.io.js'></script>
+    <script src='http://82.65.250.203:1346/socket.io/socket.io.js'></script>
     <script>
-        class RObject {
-            constructor(port, callback = () => { }) {
-                this.data = null
-                this.socket = io.connect('http://192.168.43.214:' + port)
-                this.socket.on('put', (data) => {
-                    this.data = data
-                    callback(data)
-                })
-                this.socket.on('connect_error', (err) => {
-                    this.socket.close()
-                    console.log('object closed')
+
+        function clone(obj) {
+            return JSON.parse(JSON.stringify(obj))
+        }
+
+        function str(obj) {
+            return JSON.stringify(obj)
+        }
+
+        class Exposer {
+            constructor() {
+                this.handlers = {}
+                this.exposer = io.connect('http://82.65.250.203:1346')
+                this.previous = null
+                this.exposer.on('put', (data) => {
+                    let changed_states = []
+                    if (!this.previous) changed_states = Object.keys(data)
+                    else changed_states = Object.keys(data)
+                        .filter(name => str(data[name]) != str(this.previous[name]))
+                    this.previous = clone(data)
+                    changed_states.forEach(name => {
+                        if (!this.handlers[name]) return
+                        this.handlers[name].forEach(handler => handler(data[name]))
+                    })
                 })
             }
-            poke(data) {
-                this.socket.emit('poke')
+            register_handler(name, handler) {
+                if (!this.handlers[name]) this.handlers[name] = []
+                this.handlers[name].push(handler)
             }
-            advice(data) {
-                this.socket.emit('advice', data)
+            poke(name) {
+                setTimeout(() => {
+                    this.exposer.emit('advice', { action: 'poke', name })
+                }, 500)
+            }
+            advice(name, advice) {
+                this.exposer.emit('advice', { action: 'advice', name, advice })
+            }
+            register(name, handler) {
+                this.exposer.emit('advice', { action: 'register', name })
+                let obj = {
+                    on_data: handler,
+                    poke: () => this.poke(name),
+                    advice: (advice) => this.advice(name, advice)
+                }
+                this.register_handler(name, (data) => obj.on_data(data))
+                return obj
             }
         }
+
+        const exp = new Exposer()
+
+        let trace = false
+        let enabled = true
+        let points = JSON.parse(localStorage.getItem('points') ?? '[]')
 
         let to = null
         function handle_plug(device_name) {
@@ -76,8 +149,45 @@
             html.setAttribute('class', 'plug ' + (state ? 'on' : 'off'))
         }
 
-        let kinect = new RObject(8000)
-        let plugs = new RObject(5985, (devices_state) => {
+        function update_enable_button() {
+            document.getElementById('en_btn').innerHTML = enabled ? 'disable' : 'enable'
+            document.getElementById('action_panel').setAttribute('class', enabled ? '' : 'disabled')
+        }
+
+        function press_en_btn() {
+            state_learner.advice(enabled ? 'disable' : 'enable')
+        }
+
+        var pos_mult = 90
+        var pos_offset = 100
+        var trace_timer = 2
+        var trace_time = 1
+        let kinect = exp.register('kinect', (necks) => {
+            if (trace && --trace_time == 0) {
+                let { x, y } = necks[0]
+                points.push([x, y])
+                localStorage.setItem('points', JSON.stringify(points))
+                trace_time = trace_timer
+            }
+            let persons = document.getElementById('persons')
+            persons.innerHTML = ''
+            let strs = necks.map(neck => {
+                let { x, y, detected } = neck
+                let person = document.createElement('div')
+                person.innerHTML = detected ? '😀' : '👻'
+                person.setAttribute('class', 'person')
+                person.setAttribute('style', 'top:' + y * pos_mult + 'px;left:' + (x * pos_mult + pos_offset) + 'px')
+                persons.appendChild(person)
+            })
+            points.forEach(point => {
+                let [x, y] = point
+                let point_html = document.createElement('div')
+                point_html.setAttribute('class', 'point')
+                point_html.setAttribute('style', 'top:' + y * pos_mult + 'px;left:' + (x * pos_mult + pos_offset) + 'px')
+                persons.appendChild(point_html)
+            });
+        })
+        let plugs = exp.register('plugs', (devices_state) => {
             for (let plug_name in devices_state) {
                 setup_plug(plug_name, devices_state[plug_name])
             }
@@ -85,7 +195,9 @@
         plugs.poke()
 
         let learning = null
-        let state_learner = new RObject(9876, (data) => {
+        let state_learner = exp.register('state_learner', (data) => {
+            enabled = data.enabled
+            update_enable_button()
             learning = data.is_learning
         })
         state_learner.poke()

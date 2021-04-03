@@ -71,6 +71,7 @@ let state_obj = new LocalObject('state', 9876, (name) => {
 
 let old_states = new Set([])
 let saved_necks = []
+let change_state_to = null
 
 new RemoteObject('kinect', function (necks) {
 
@@ -87,8 +88,11 @@ new RemoteObject('kinect', function (necks) {
     states = new Set(states)
 
     if (!eqSet(states, old_states)) {
-        state_obj.put(Array.from(states))
-        old_states = states
+        clearTimeout(change_state_to)
+        change_state_to = setTimeout(() => {
+            state_obj.put(Array.from(states))
+            old_states = states
+        }, 500)
     }
 })
 
