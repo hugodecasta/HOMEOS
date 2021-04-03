@@ -25,6 +25,7 @@ fs.writeFileSync(recording_file_path, '')
 let kinect_online = new LocalObject('kinect', 8000, (advice) => {
     return ({
         'reset': () => {
+            console.log('KINECT RESET')
             state_necks = []
         },
         'stop': () => {
@@ -135,8 +136,7 @@ function send_necks(necks_to_send) {
     if (!can_send) return
     setTimeout(() => { can_send = true }, sending_timeout)
     can_send = false
-    if (necks_to_send.length > 0)
-        kinect_online.put(necks_to_send)
+    kinect_online.put(necks_to_send)
 }
 
 var int = null

@@ -19,7 +19,9 @@ let state_obj = new LocalObject('exposer', 1346,
         let { action } = advice
         let action_result = ({
             'poke': ({ name }) => all_remotes[name].poke(),
-            'advice': ({ name, advice }) => all_remotes[name].advice(advice),
+            'advice': ({ name, advice: advice_data }) => {
+                all_remotes[name].advice(advice_data)
+            },
             'register': ({ name }) => {
                 all_remotes[name] = new RemoteObject(name, function (data) {
                     update_remote(name, data)

@@ -109,10 +109,14 @@
                 this.exposer.emit('advice', { action: 'register', name })
                 let obj = {
                     on_data: handler,
+                    data: null,
                     poke: () => this.poke(name),
                     advice: (advice) => this.advice(name, advice)
                 }
-                this.register_handler(name, (data) => obj.on_data(data))
+                this.register_handler(name, (data) => {
+                    obj.data = data
+                    obj.on_data(data)
+                })
                 return obj
             }
         }
@@ -142,6 +146,7 @@
                 html.innerHTML = name
                 document.getElementById('plugs').appendChild(html)
                 html.addEventListener('click', () => {
+                    console.log('LIGHT')
                     html.setAttribute('class', 'plug waiting ' + (plugs.data[name] ? 'off' : 'on'))
                     handle_plug(name)
                 })
@@ -160,9 +165,10 @@
 
         var pos_mult = 90
         var pos_offset = 100
-        var trace_timer = 2
+        var trace_timer = 1
         var trace_time = 1
         let kinect = exp.register('kinect', (necks) => {
+            if (!necks) return
             if (trace && --trace_time == 0) {
                 let { x, y } = necks[0]
                 points.push([x, y])
