@@ -77,6 +77,7 @@
 
         .plan .schedule {
             animation: blink 1s infinite;
+            font-family: monospace;
         }
 
         .plan .schedule.waiting {
@@ -165,7 +166,6 @@
                 document.getElementById('view_button').innerHTML = 'View persons'
             }
         }
-        change_view()
 
         // ----------------------------------------- EXPOSER
 
@@ -340,16 +340,21 @@
             action_count = parseInt(action_count)
             let actions = []
             for (let i = 0; i < action_count; ++i) {
-                let plug = prompt('[' + i + '] plug name', known_plugs[0])
-                while (!known_plugs.includes(plug) && plug) {
-                    if (!confirm('must chooses from ' + known_plugs.join(', '))) return
-                    plug = prompt('[' + i + '] plug name', known_plugs[0])
-                }
+                let plug = prompt('[' + (i + 1) + '] plug name (or reset)', known_plugs[0])
                 if (!plug) return
-                let action = prompt('[' + i + '] action (on / off)', 'on')
-                if (!action) return
-                action = action == 'on'
-                actions.push({ plug, action })
+                if (plug == 'reset') {
+                    actions.push({ plug, action: true })
+                } else {
+                    while (!known_plugs.includes(plug) && plug) {
+                        if (!confirm('must chooses from ' + known_plugs.join(', '))) return
+                        plug = prompt('[' + (i + 1) + '] plug name (or reset)', known_plugs[0])
+                    }
+                    if (!plug) return
+                    let action = prompt('[' + i + '] action (on / off)', 'on')
+                    if (!action) return
+                    action = action == 'on'
+                    actions.push({ plug, action })
+                }
             }
             let proba = prompt('probability (in %)', 100)
             if (!proba) return
@@ -389,15 +394,15 @@
             if (scheduled) {
                 let { time, will_occur } = scheduled
                 let schedule_time = new Date(time)
-                let [day, month, year, hours, minuts] = [
+                let [day, month, year, hours, minutes] = [
                     schedule_time.getDate(),
                     schedule_time.getMonth(),
                     schedule_time.getFullYear(),
                     schedule_time.getHours(),
                     schedule_time.getMinutes(),
                 ]
-                let display_date = `${addz(day)}/${addz(month + 1)}/${year} ${addz(hours)}:${addz(minutes)}`
-                let text = will_occur ? 'scheduled for ' + display_date : 'will not occur'
+                let display_date = `${addz(day)}/${addz(month + 1)}/${year} - ${addz(hours)}:${addz(minutes)}`
+                let text = will_occur ? display_date : 'will not occur'
                 let schedule_html = create_simple_div(text, 'schedule ' + (!scene_launched ? 'waiting' : ''))
                 plan_html.appendChild(schedule_html)
             }
@@ -405,7 +410,10 @@
             let delete_btn = document.createElement('button')
             delete_btn.innerHTML = 'delete'
             plan_html.appendChild(delete_btn)
-            delete_btn.onclick = () => scene.advice({ action: 'remove plan', uuid })
+            delete_btn.onclick = () => {
+                if (confirm('delete this plan ?'))
+                    scene.advice({ action: 'remove plan', uuid })
+            }
             return plan_html
         }
 

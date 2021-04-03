@@ -39,14 +39,16 @@ function launch() {
                 if (will_occur) {
                     actions.forEach(action_elm => {
                         let { plug, action } = action_elm
-                        plugs.advice({ device_name: plug, state: action })
+                        if (plug == 'reset') kinect.advice('reset')
+                        else plugs.advice({ device_name: plug, state: action })
                     })
                 }
             }
             let time = new Date()
             let min_offset = parseInt((Math.random() - 0.5) * radius)
             let will_occur = Math.random() <= proba
-            time.setHours(hours, minutes + min_offset, 0, 0)
+            time.setHours(hours, minutes, 0, 0)
+            time.setMinutes(time.getMinutes() + min_offset)
             if (time.getTime() <= now) time.setHours(time.getHours() + 24)
             time = time.getTime()
             scheduled = { time, will_occur, actions }
@@ -62,6 +64,7 @@ function launch() {
 function stop() {
     state_learner.advice('enable')
     enabled = false
+    schedule = {}
     clearInterval(int)
     push_data()
 }
@@ -105,6 +108,7 @@ push_data()
 
 let plugs = new RemoteObject('plugs')
 let state_learner = new RemoteObject('state_learner')
+let kinect = new RemoteObject('kinect')
 
 
 // ----------- MAIN
