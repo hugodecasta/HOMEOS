@@ -4,19 +4,20 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 
 processes = []
 stop_event = threading.Event()
 
 
-def stream_output(proc, proc_id):
+def stream_output(proc, proc_id, script_name, padding):
     def reader(stream):
         for line in iter(stream.readline, ""):
             if stop_event.is_set():
                 break
             txt = line.rstrip("\n")
             if txt:
-                print(f"[cmd{proc_id}] {txt}")
+                print(f"[cmd{proc_id} - {script_name}] {padding}-- {txt}")
         stream.close()
 
     t_out = threading.Thread(target=reader, args=(proc.stdout,), daemon=True)
@@ -53,9 +54,13 @@ def main():
 
     modules_dir = os.path.join(os.path.dirname(__file__), "modules")
     files = sorted(glob.glob(os.path.join(modules_dir, "*.py")))
+    files = ["variable_server.py"] + files
 
     threads = []
+    procs = []
+    max_name_size = max(len(os.path.basename(path)) for path in files) + 2
     for idx, path in enumerate(files, start=1):
+        script_name = os.path.basename(path)
         proc = subprocess.Popen(
             [sys.executable, "-u", path],
             stdout=subprocess.PIPE,
@@ -63,8 +68,14 @@ def main():
             text=True,
             bufsize=1,
         )
+        max_name_size = max(max_name_size, len(script_name))
         processes.append(proc)
-        threads.extend(stream_output(proc, idx))
+        threads.extend(
+            stream_output(
+                proc, idx, script_name, "-" * (max_name_size - len(script_name))
+            )
+        )
+        time.sleep(0.5)  # Stagger the startups a bit
 
     try:
         for proc in processes:

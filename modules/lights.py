@@ -2,7 +2,7 @@ import sys
 
 sys.path.append(".")
 import requests
-from variable_server import sys_get_variables, sys_set_variables
+from variable_server import sys_get_variable, sys_set_variables
 import time
 
 # region ---------------------------------------------------------------------- DEVICES
@@ -31,9 +31,12 @@ def set_device(name, state):
     elif device_type == "plug":
         url = f"http://{ip}/rpc/Switch.Set?id=0&on={state_str}"
 
-    response = requests.get(url)
-    if response.status_code == 200:
-        return True
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return True
+    except Exception as e:
+        print(f"Failed to set device {name} state: {e}")
     return False
 
 
@@ -42,17 +45,24 @@ def set_device(name, state):
 
 def run():
     print("Starting lights module...")
+
+    for device_name, _, _ in device_map:
+        var_name = f"{device_name}_state"
+        if sys_get_variable(var_name) is None:
+            sys_set_variables(var_name, False)
+
     caches = dict()
+    caches[var_name] = False
     while True:
         for device_name, _, _ in device_map:
+            if device_name == "Ordi":
+                continue
             var_name = f"{device_name}_state"
-            variables = sys_get_variables("lights")
-            if var_name in variables:
-                state = variables[var_name]
-                if var_name in caches and caches[var_name] == state:
-                    continue
-                caches[var_name] = state
-                set_device(device_name, state)
+            required_value = sys_get_variable(var_name)
+            if var_name in caches and caches[var_name] == required_value:
+                continue
+            caches[var_name] = required_value
+            set_device(device_name, required_value)
         time.sleep(1)
 
 

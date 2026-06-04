@@ -3,6 +3,7 @@ import requests
 from threading import Thread
 import time
 import json
+import os
 
 # region ---------------------------------------------------------------------- INNER SYS
 
@@ -19,32 +20,47 @@ def save_thread():
         time.sleep(1)
 
 
-def set_variables(system_name: str, variables: dict):
-    if not system_name in var_cache:
-        var_cache[system_name] = {}
-    for var_name, var_value in variables.items():
-        var_cache[system_name][var_name] = var_value
+def set_variables(variable: dict, value):
+    var_cache[variable] = value
 
 
-def get_system_variables(system_name: str):
-    if system_name in var_cache:
-        return var_cache[system_name]
-    else:
-        return dict()
+def get_variable(variable: str):
+    return var_cache.get(variable, None)
+
+
+FILES_DIR = "var_files"
+os.makedirs(FILES_DIR, exist_ok=True)
+
+
+def set_file(file_name: str, content: str):
+    file_name = os.path.join(FILES_DIR, file_name)
+    with open(file_name, "w") as f:
+        f.write(content)
+
+
+def get_file(file_name: str):
+    file_name = os.path.join(FILES_DIR, file_name)
+    if not os.path.exists(file_name):
+        return None
+    with open(file_name, "r") as f:
+        return f.read()
 
 
 # region ---------------------------------------------------------------------- EXTERNAL UTILS
 
 
-def sys_get_variables(system_name: str):
-    url = f"http://localhost:{PORT}/variables/{system_name}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        raise Exception(
-            f"Failed to get variables for system {system_name}-{response.status_code}: {response.text}"
-        )
+def sys_get_variable(variable: str):
+    url = f"http://localhost:{PORT}/variables/{variable}"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(
+                f"Failed to get variable {variable}-{response.status_code}: {response.text}"
+            )
+    except Exception as e:
+        raise Exception(f"Error connecting to variable server: {e}")
 
 
 def sys_get_all_variables():
@@ -56,15 +72,33 @@ def sys_get_all_variables():
         raise Exception(f"Failed to get all variables: {response.text}")
 
 
-def sys_set_variables(system_name: str, variables: dict):
-    url = f"http://localhost:{PORT}/variables/{system_name}"
-    response = requests.post(url, json=variables)
+def sys_set_variables(variable: str, value: dict):
+    url = f"http://localhost:{PORT}/variables/{variable}"
+    response = requests.post(url, json=value)
     if response.status_code == 200:
         return True
     else:
-        raise Exception(
-            f"Failed to set variables for system {system_name}: {response.text}"
-        )
+        raise Exception(f"Failed to set variable {variable}: {response.text}")
+
+
+def sys_set_file(file_name: str, content: str):
+    url = f"http://localhost:{PORT}/files/{file_name}"
+    response = requests.post(url, data=content.encode("utf-8"))
+    if response.status_code == 200:
+        return True
+    else:
+        raise Exception(f"Failed to set file {file_name}: {response.text}")
+
+
+def sys_get_file(file_name: str):
+    url = f"http://localhost:{PORT}/files/{file_name}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.text
+    elif response.status_code == 404:
+        return None
+    else:
+        raise Exception(f"Failed to get file {file_name}: {response.text}")
 
 
 # region ---------------------------------------------------------------------- SERVER
@@ -91,17 +125,31 @@ if __name__ == "__main__":
         return jsonify(var_cache)
 
     # region .... get specific system variables
-    @app.route("/variables/<system_name>", methods=["GET"])
-    def app_get_system_variables(system_name):
-        variables = get_system_variables(system_name)
-        return jsonify(variables)
+    @app.route("/variables/<variable>", methods=["GET"])
+    def app_get_variable(variable):
+        var = get_variable(variable)
+        return jsonify(var)
 
     # region .... set variables for a system
-    @app.route("/variables/<system_name>", methods=["POST"])
-    def app_set_system_variables(system_name):
-        variables = request.json
-        set_variables(system_name, variables)
-        return jsonify({"message": "Variables set successfully"}), 200
+    @app.route("/variables/<variable>", methods=["POST"])
+    def app_set_variable(variable):
+        value = request.json
+        set_variables(variable, value)
+        return jsonify({"message": "Variable set successfully"}), 200
+
+    @app.route("/files/<file_name>", methods=["POST"])
+    def app_set_file(file_name):
+        content = request.data.decode("utf-8")
+        set_file(file_name, content)
+        return jsonify({"message": "File saved successfully"}), 200
+
+    @app.route("/files/<file_name>", methods=["GET"])
+    def app_get_file(file_name):
+        content = get_file(file_name)
+        if content is not None:
+            return content, 200
+        else:
+            return jsonify({"message": "File not found"}), 404
 
     try:
         from waitress import serve

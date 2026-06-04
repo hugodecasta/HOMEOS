@@ -1,1 +1,1 @@
-{"user_pos": {"position": [-28.29793015725279, -10.225610024855621, 198.00560646419598], "x": -41.06835589284998, "y": 294.77445533726}}
+{"Ordi_state": false, "BuffetSalon_state": false, "BuffetEntree_state": false, "Entree_state": false, "Cuisine_state": false, "user_pos": {"x": -500.27423474667114, "y": -1247.1548958428505}, "user_pos_disp_options": {"width": 300, "height": 300, "offsetx": 105, "offsety": 200, "scale": 0.5}, "lights": {"Ordi_state": true}}
