@@ -9,13 +9,23 @@ export async function render() {
         height: 300,
         offsetx: 0,
         offsety: 0,
-        scale: 1
+        scale: 1,
     }
-
     const loaded_options = await get_variable("user_pos_disp_options")
     if (loaded_options) {
         Object.assign(disp_options, loaded_options)
     }
+
+    const room_bound = {
+        x: [-10, 10],
+        y: [-10, 10],
+    }
+    const loaded_room_bound = await get_variable("user_pos_room_bound")
+    if (loaded_room_bound) {
+        Object.assign(room_bound, loaded_room_bound)
+    }
+    console.log(room_bound)
+
 
     let is_drawing = false
     let current_draw_zone = null
@@ -53,7 +63,12 @@ export async function render() {
                 if (!zone_name) return
                 current_draw_zone = { name: zone_name, points: [] }
             }
-        })
+        }),
+        hr(),
+        button('Set min x bound', (f) => room_bound.x[0] = user_data.x).set_style({ display: "block" }),
+        button('Set max x bound', (f) => room_bound.x[1] = user_data.x).set_style({ display: "block" }),
+        button('Set min y bound', (f) => room_bound.y[0] = user_data.y).set_style({ display: "block" }),
+        button('Set max y bound', (f) => room_bound.y[1] = user_data.y).set_style({ display: "block" }),
     )
 
     const viewer = div().add2(comp).set_style({
@@ -63,6 +78,33 @@ export async function render() {
     })
 
     const zone_options_view = div().add2(comp)
+
+    const bound_disp = div().add2(viewer).set_style({
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+    })
+
+    listen_to(() => [room_bound, disp_options], () => {
+        const x1 = (room_bound.x[0] + disp_options.offsetx) * disp_options.scale
+        const y1 = (room_bound.y[0] + disp_options.offsety) * disp_options.scale
+        const x2 = (room_bound.x[1] + disp_options.offsetx) * disp_options.scale
+        const y2 = (room_bound.y[1] + disp_options.offsety) * disp_options.scale
+        bound_disp.set_style({
+            left: x1 + 'px',
+            top: y1 + 'px',
+            width: (x2 - x1) + 'px',
+            height: (y2 - y1) + 'px',
+            border: '2px solid black',
+        })
+    }, true)
+
+    listen_to(() => room_bound, () => {
+        set_variable("user_pos_room_bound", room_bound)
+    })
 
     const dot = div().add2(viewer).absolute().set_style({
         width: '10px',
@@ -258,7 +300,7 @@ export async function render() {
         const user_pos = await get_variable("user_pos")
         user_data.x = user_pos.x
         user_data.y = user_pos.y
-    }, 100)
+    }, 500)
 
     return comp
 

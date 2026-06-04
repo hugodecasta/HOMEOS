@@ -2,7 +2,7 @@ import sys
 
 sys.path.append(".")
 import cv2
-from variable_server import sys_set_variables
+from variable_server import sys_set_variables, sys_get_variable
 import requests
 import time
 import math
@@ -100,6 +100,7 @@ def run():
     cam1 = cv2.VideoCapture(0)
     cam2 = cv2.VideoCapture(2)
 
+    try_count = 0
     while True:
         ret1, frame1 = cam1.read()
         ret2, frame2 = cam2.read()
@@ -108,23 +109,37 @@ def run():
             break
         wide_image = cv2.hconcat([frame1, frame2])
         position = compute_position(wide_image)
+        bound = sys_get_variable("user_pos_room_bound")
+        if not bound:
+            bound = dict(x=[-100000, 100000], y=[-100000, 100000])
         if position is not None:
             x, y, z = position
             past_history.append((x, z))
             past_history = past_history[-MA:]
             x, z = moving_average(np.array(past_history))
+
+            if (
+                x < bound["x"][0]
+                or x > bound["x"][1]
+                or z < bound["y"][0]
+                or z > bound["y"][1]
+            ):
+                continue
+
             if lx is None and ly is None:
                 lx = x
                 ly = z
             dx = x - lx
             dy = z - ly
             dist = math.sqrt(dx * dx + dy * dy)
-            if dist <= 100:
+            if dist <= 150 or try_count > 30:
+                try_count = 0
                 lx, ly = x, z
                 sys_set_variables("user_pos", {"x": x, "y": z})
             else:
                 lx = None
                 ly = None
+                try_count += 1
 
 
 if __name__ == "__main__":

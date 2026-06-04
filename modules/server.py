@@ -12,6 +12,7 @@ from variable_server import (
     sys_set_variables,
     sys_set_file,
     sys_get_file,
+    sys_get_variables,
 )
 
 # region ---------------------------------------------------------------------- SETUP
@@ -42,6 +43,12 @@ def api_get_module_names():
     names = os.listdir("front/modules")
     names = [name[:-3] for name in names if name.endswith(".js")]
     return jsonify(names)
+
+
+@app.route("/api/variables", methods=["GET"])
+def api_get_variables():
+    variables = sys_get_variables()
+    return jsonify(variables)
 
 
 @app.route("/api/variable/<variable>", methods=["GET"])

@@ -10,7 +10,7 @@ import time
 device_map = [
     ("Ordi", "192.168.1.46", "plug"),
     ("BuffetSalon", "192.168.1.7", "plug"),
-    ("BuffetEntree", "192.168.1.7", "plug"),
+    ("BuffetEntree", "192.168.1.75", "plug"),
     ("Entree", "192.168.1.145", "bulb"),
     ("Cuisine", "192.168.1.179", "bulb"),
 ]
@@ -55,8 +55,8 @@ def run():
     caches[var_name] = False
     while True:
         for device_name, _, _ in device_map:
-            if device_name == "Ordi":
-                continue
+            # if device_name == "Ordi":
+            #     continue
             var_name = f"{device_name}_state"
             required_value = sys_get_variable(var_name)
             if var_name in caches and caches[var_name] == required_value:

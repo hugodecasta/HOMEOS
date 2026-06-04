@@ -49,6 +49,18 @@ def get_file(file_name: str):
 # region ---------------------------------------------------------------------- EXTERNAL UTILS
 
 
+def sys_get_variables():
+    url = f"http://localhost:{PORT}/variables"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f"Failed to get all variables: {response.text}")
+    except Exception as e:
+        raise Exception(f"Error connecting to variable server: {e}")
+
+
 def sys_get_variable(variable: str):
     url = f"http://localhost:{PORT}/variables/{variable}"
     try:

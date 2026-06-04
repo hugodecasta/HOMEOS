@@ -1,0 +1,15 @@
+[Unit]
+Description=HOMEOS service
+After=network.target
+
+[Service]
+Type=simple
+User=hugo
+WorkingDirectory=/home/hugo/HOMEOS/
+ExecStart=/home/hugo/HOMEOS/venv/bin/python3 /home/hugo/HOMEOS/exec.py
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

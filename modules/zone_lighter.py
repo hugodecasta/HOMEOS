@@ -41,7 +41,10 @@ def check_zone_activation(name, zone, user_pos):
     x, y = user_pos["x"], user_pos["y"]
 
     is_inside = is_point_in_polygon(x, y, polygon)
+
     adder = 1 / (rise_time + 0.001) if is_inside else -1 / (fall_time + 0.001)
+
+    sys_set_variables(f"{name}_active", is_inside)
 
     for device in devices:
         var_name = f"{device}_state"
@@ -59,7 +62,6 @@ def check_zone_activation(name, zone, user_pos):
         elif value <= 0:
             cached_devices[var_name] = 0
             sys_set_variables(var_name, False)
-    print(cached_devices)
 
 
 # region ---------------------------------------------------------------------- ACTOR
@@ -88,6 +90,8 @@ def run():
 
         for zone_name, zone in var_light_zones.items():
             check_zone_activation(zone_name, zone, var_user_pos)
+
+        sys_set_variables("light_zone_cache", cached_devices)
 
         time.sleep(1)
 

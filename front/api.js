@@ -1,3 +1,8 @@
+export async function get_variables() {
+    const res = await fetch(`/api/variables`)
+    return res.json()
+}
+
 export async function get_variable(variable) {
     const res = await fetch(`/api/variable/${variable}`)
     return res.json()
