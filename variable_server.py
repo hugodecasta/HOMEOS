@@ -168,9 +168,9 @@ if __name__ == "__main__":
 
         print("INFO: Running with waitress WSGI server")
         serve(app, host="0.0.0.0", port=PORT)
-    except ImportError:
+    except Exception as e:
         print(
-            "WARNING: This is a development server. Install a production WSGI server "
-            "like 'waitress' and run again."
+            "Could not use waitress, falling back to Flask development server. Error:",
+            e,
         )
         app.run(host="0.0.0.0", port=PORT)

@@ -54,11 +54,19 @@ def run():
     caches = dict()
     caches[var_name] = False
     while True:
+
+        forced_state = None
+        gps_status = sys_get_variable("gps_status")
+        if gps_status is not None and not gps_status.get("is_home", False):
+            forced_state = False
+
         for device_name, _, _ in device_map:
             # if device_name == "Ordi":
             #     continue
             var_name = f"{device_name}_state"
-            required_value = sys_get_variable(var_name)
+            required_value = (
+                forced_state if forced_state is not None else sys_get_variable(var_name)
+            )
             if var_name in caches and caches[var_name] == required_value:
                 continue
             caches[var_name] = required_value
