@@ -15,7 +15,13 @@ def detect_noses(wide_image):
     auth = "dca16c20-e0aa-4514-ab58-8727dc4f775a"
     files = {"image": ("image.jpg", img_encoded.tobytes(), "image/jpeg")}
     headers = {"Authorization": f"Bearer {auth}"}
-    response = requests.post(url, files=files, headers=headers)
+
+    try:
+        response = requests.post(url, files=files, headers=headers)
+    except Exception as e:
+        print(f"Error during nose detection: {e}")
+        return []
+
     if response.status_code == 200:
         data = response.json()
         # array [ (x,y,conf), ...]
