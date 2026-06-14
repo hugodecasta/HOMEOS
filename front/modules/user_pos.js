@@ -114,6 +114,14 @@ export async function render() {
         transform: 'translate(-5px, -5px)'
     })
 
+    const pdot = div().add2(viewer).absolute().set_style({
+        width: '10px',
+        height: '10px',
+        borderRadius: '100px',
+        backgroundColor: 'orange',
+        transform: 'translate(-5px, -5px)'
+    })
+
     const draw_disp = div().add2(viewer).absolute().set_style({
         width: '100%',
         height: '100%',
@@ -136,7 +144,7 @@ export async function render() {
     const loaded_drawing = JSON.parse(await get_file("user_pos_drawing") || "[]")
     drawing.push(...loaded_drawing)
 
-    const user_data = { x: 0, y: 0 }
+    const user_data = { x: 0, y: 0, px: 0, py: 0 }
 
     listen_to(() => [is_drawing, current_draw_zone], () => {
         const size = is_drawing || current_draw_zone ? '3px' : '1px'
@@ -164,6 +172,12 @@ export async function render() {
     listen_to(() => [user_data, disp_options], () => {
         const x = (user_data.x + disp_options.offsetx) * disp_options.scale
         const y = (user_data.y + disp_options.offsety) * disp_options.scale
+        const px = (user_data.px + disp_options.offsetx) * disp_options.scale
+        const py = (user_data.py + disp_options.offsety) * disp_options.scale
+        pdot.set_style({
+            left: px + 'px',
+            top: py + 'px',
+        })
         dot.set_style({
             left: x + 'px',
             top: y + 'px',
@@ -300,6 +314,8 @@ export async function render() {
         const user_pos = await get_variable("user_pos")
         user_data.x = user_pos.x
         user_data.y = user_pos.y
+        user_data.px = user_pos.px
+        user_data.py = user_pos.py
     }, 500)
 
     return comp

@@ -38,7 +38,7 @@ def check_zone_activation(name, zone, user_pos):
     fall_time = options.get("fall_time", 0)
     delay_on = options.get("delay_on", 0)
     delay_off = options.get("delay_off", 0)
-    x, y = user_pos["x"], user_pos["y"]
+    x, y = user_pos["px"], user_pos["py"]
 
     is_inside = is_point_in_polygon(x, y, polygon)
 

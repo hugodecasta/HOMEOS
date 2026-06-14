@@ -140,8 +140,18 @@ def run():
             dist = math.sqrt(dx * dx + dy * dy)
             if dist <= 150 or try_count > 30:
                 try_count = 0
+                px = x + dx * 3
+                py = z + dy * 3
+                if px < bound["x"][0]:
+                    px = bound["x"][0]
+                if px > bound["x"][1]:
+                    px = bound["x"][1]
+                if py < bound["y"][0]:
+                    py = bound["y"][0]
+                if py > bound["y"][1]:
+                    py = bound["y"][1]
                 lx, ly = x, z
-                sys_set_variables("user_pos", {"x": x, "y": z})
+                sys_set_variables("user_pos", {"x": x, "y": z, "px": px, "py": py})
             else:
                 lx = None
                 ly = None
