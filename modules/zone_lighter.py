@@ -8,6 +8,9 @@ import json
 
 # region ---------------------------------------------------------------------- ZONE UTILS
 
+FPS = 60
+timer = 1 / FPS
+
 
 def is_point_in_polygon(x, y, polygon):
     num = len(polygon)
@@ -42,7 +45,7 @@ def check_zone_activation(name, zone, user_pos):
 
     is_inside = is_point_in_polygon(x, y, polygon)
 
-    adder = 1 / (rise_time + 0.001) if is_inside else -1 / (fall_time + 0.001)
+    adder = timer / (rise_time + 0.001) if is_inside else -timer / (fall_time + 0.001)
 
     sys_set_variables(f"{name}_active", is_inside)
 
@@ -93,7 +96,7 @@ def run():
 
         sys_set_variables("light_zone_cache", cached_devices)
 
-        time.sleep(1)
+        time.sleep(timer)
 
 
 if __name__ == "__main__":

@@ -11,13 +11,21 @@ PORT = 9874
 var_cache = dict()
 
 save_cache_path = "var_cache.json"
+backup_cache_path = "var_cache_backup.json"
 
 
 def save_thread():
+    spent = 0
     while True:
         with open(save_cache_path, "w") as f:
             json.dump(var_cache, f)
         time.sleep(1)
+        spend += 1
+        # every hour
+        if spend == 60 * 60:
+            spend = 0
+            with open(backup_cache_path, "w") as f:
+                json.dump(var_cache, f)
 
 
 def set_variables(variable: dict, value):

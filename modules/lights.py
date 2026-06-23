@@ -71,7 +71,7 @@ def run():
                 continue
             caches[var_name] = required_value
             set_device(device_name, required_value)
-        time.sleep(1)
+        time.sleep(0.016)  # 60 fps
 
 
 if __name__ == "__main__":
