@@ -4,7 +4,9 @@ import { debounce_force_maker, debounce_maker } from "../vanille/fetch_utils.js"
 
 export async function render() {
 
-    const comp = div()
+    const comp = div().set_style({
+        overflow: 'auto',
+    })
 
     setInterval(async () => {
         const variables = await get_variables()

@@ -20,10 +20,10 @@ def save_thread():
         with open(save_cache_path, "w") as f:
             json.dump(var_cache, f)
         time.sleep(1)
-        spend += 1
+        spent += 1
         # every hour
-        if spend == 60 * 60:
-            spend = 0
+        if spent == 60 * 60:
+            spent = 0
             with open(backup_cache_path, "w") as f:
                 json.dump(var_cache, f)
 
