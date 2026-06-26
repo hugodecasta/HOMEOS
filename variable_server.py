@@ -173,7 +173,9 @@ if __name__ == "__main__":
 
     try:
         from waitress import serve
+        import logging
 
+        logging.getLogger("waitress").setLevel(logging.ERROR)
         print("INFO: Running with waitress WSGI server")
         serve(app, host="0.0.0.0", port=PORT)
     except Exception as e:
