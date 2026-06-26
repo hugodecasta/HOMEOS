@@ -178,7 +178,7 @@ def run():
             break
         wide_image = cv2.hconcat([frame1, frame2])
         position = compute_position(wide_image)
-        cv2.imwrite("user_pos.jpg", draw(wide_image, position))
+        # cv2.imwrite("user_pos.jpg", draw(wide_image, position))
         bound = sys_get_variable("user_pos_room_bound")
         if not bound:
             bound = dict(x=[-100000, 100000], y=[-100000, 100000])
