@@ -39,7 +39,10 @@ export async function render() {
         top: '300px'
     })
 
+
     const devices_disp = div().add2(options)
+
+    const status_disp = div().add2(options)
 
     listen_to(() => gps_options.all_devices, () => {
         devices_disp.clear().add(
@@ -140,6 +143,19 @@ export async function render() {
         gps.long = gps_data.long
         gps.time = gps_data.time
     }, 1000)
+
+    setInterval(async () => {
+        const status = await get_variable("gps_status")
+        status_disp.clear().add(
+            hr(),
+            "Status:", status.is_home ? "Home !" : "Away ...", br(),
+            div().set_style({
+                width: '20px',
+                height: '20px',
+                backgroundColor: status.is_home ? 'green' : 'red'
+            })
+        )
+    })
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {

@@ -7,11 +7,24 @@ export async function render() {
     const comp = div()
 
     setInterval(async () => {
+
         const zone_cache = await get_variable("light_zone_cache")
+        const states = {}
+        for (const [light_name, amount] of Object.entries(zone_cache || {})) {
+            const state_name = `${light_name}_state`
+            states[light_name] = await get_variable(state_name)
+        }
+
         comp.clear().add(
-            ...Object.entries(zone_cache || {}).map(([light_name, amount]) => div().add(
-                light_name, create_elm('progress').set_attributes({ max: 1, value: amount }), br()
-            ))
+            ...Object.entries(zone_cache || {}).map(([light_name, amount]) =>
+                div()
+                    .add(
+                        light_name, create_elm('progress').set_attributes({ max: 1, value: amount }), br()
+                    )
+                    .set_style({
+                        opacity: states[light_name] ? 1 : 0.2,
+                    })
+            )
         )
     }, 1000)
 

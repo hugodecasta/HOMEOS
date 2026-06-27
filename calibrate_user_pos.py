@@ -4,7 +4,7 @@ import argparse
 import time
 import cv2
 import numpy as np
-import modules.user_pos as user_pos
+import modules.user_detection as user_detection
 
 
 def capture_wide_image(cam1, cam2):
@@ -18,7 +18,7 @@ def capture_wide_image(cam1, cam2):
 
 
 def get_disparity_from_wide_image(wide_image, min_conf=0.6):
-    noses = user_pos.get_2_noses(wide_image)
+    noses = user_detection.get_2_noses(wide_image)
 
     if noses is None:
         return None
@@ -65,7 +65,7 @@ def measure_disparity(cam1, cam2, sample_count=40, min_conf=0.6):
 
         # Debug visuel compatible avec votre fonction existante
         position = None
-        cv2.imwrite("calibration_debug.jpg", user_pos.draw(wide_image, position))
+        cv2.imwrite("calibration_debug.jpg", user_detection.draw(wide_image, position))
 
         time.sleep(0.03)
 
