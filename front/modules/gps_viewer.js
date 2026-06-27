@@ -148,12 +148,13 @@ export async function render() {
         const status = await get_variable("gps_status")
         status_disp.clear().add(
             hr(),
-            "Status:", status.is_home ? "Home !" : "Away ...", br(),
             div().set_style({
                 width: '20px',
                 height: '20px',
+                borderRadius: '50%',
                 backgroundColor: status.is_home ? 'green' : 'red'
-            })
+            }).inline().margin({ right: 10, top: 5, bottom: -5 }),
+            status.is_home ? "user is Home !" : "user is Away ...", br(),
         )
     })
 
