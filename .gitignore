@@ -3,7 +3,7 @@ __pycache__/
 *.py[codz]
 *$py.class
 
-var_cache*.json
+var_cache*
 
 # C extensions
 *.so
