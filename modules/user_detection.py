@@ -170,10 +170,21 @@ def run():
         if not ret1 or not ret2:
             print("Failed to capture video")
             break
+
         wide_image = cv2.hconcat([frame1, frame2])
         position = compute_position(wide_image)
+
+        room_bounds = sys_get_variable("user_pos_room_bound")
+        if room_bounds is None:
+            time.sleep(1)
+            continue
+        room_x_min, room_x_max = room_bounds.get("x")
+        room_y_min, room_y_max = room_bounds.get("y")
+
         if position is not None:
             x, y, z, noses = position
+            if x < room_x_min or x > room_x_max or z < room_y_min or z > room_y_max:
+                continue
             # for 1 user for now
             sys_set_variables("user_detection", [{"x": x, "y": z, "time": detect_time}])
 

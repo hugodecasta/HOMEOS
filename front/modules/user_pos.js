@@ -82,10 +82,10 @@ export async function render() {
             }
         }),
         hr(),
-        button('Set min x bound', (f) => room_bound.x[0] = user_data.x).set_style({ display: "block" }),
-        button('Set max x bound', (f) => room_bound.x[1] = user_data.x).set_style({ display: "block" }),
-        button('Set min y bound', (f) => room_bound.y[0] = user_data.y).set_style({ display: "block" }),
-        button('Set max y bound', (f) => room_bound.y[1] = user_data.y).set_style({ display: "block" }),
+        button('Set min x bound', (f) => room_bound.x[0] = user_poses[user_poses.length - 1].x).set_style({ display: "block" }),
+        button('Set max x bound', (f) => room_bound.x[1] = user_poses[user_poses.length - 1].x).set_style({ display: "block" }),
+        button('Set min y bound', (f) => room_bound.y[0] = user_poses[user_poses.length - 1].y).set_style({ display: "block" }),
+        button('Set max y bound', (f) => room_bound.y[1] = user_poses[user_poses.length - 1].y).set_style({ display: "block" }),
     )
 
     const viewer = div().add2(comp).set_style({
