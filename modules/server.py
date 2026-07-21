@@ -91,7 +91,9 @@ if __name__ == "__main__":
     print(f"Running Front server @ http://localhost:{PORT}")
     try:
         from waitress import serve
+        import logging
 
+        logging.getLogger("waitress").setLevel(logging.ERROR)
         print("Running with waitress...")
         serve(app, host="0.0.0.0", port=PORT)
     except ImportError:

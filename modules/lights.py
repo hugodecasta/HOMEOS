@@ -60,6 +60,15 @@ def run():
         if gps_status is not None and not gps_status.get("is_home", False):
             forced_state = False
 
+        light_enabled = sys_get_variable("light_enabled")
+        if light_enabled is None:
+            sys_set_variables("light_enabled", True)
+            light_enabled = True
+
+        if not light_enabled:
+            time.sleep(1)  # 60 fps
+            continue
+
         for device_name, _, _ in device_map:
             # if device_name == "Ordi":
             #     continue
