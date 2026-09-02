@@ -16,7 +16,7 @@ export async function render() {
                 key + ':', JSON.stringify(value)
             ))
         )
-    }, 1000)
+    }, 100)
 
     return comp
 

@@ -7,6 +7,7 @@ import requests
 import time
 import math
 import numpy as np
+import datetime
 
 
 def detect_noses(wide_image):
@@ -164,6 +165,7 @@ def run():
     cam2 = cv2.VideoCapture(2)
 
     while True:
+        sys_set_variables("try_detect", {"try": datetime.datetime.now().isoformat()})
         detect_time = time.time()
         ret1, frame1 = cam1.read()
         ret2, frame2 = cam2.read()
@@ -186,7 +188,13 @@ def run():
             if x < room_x_min or x > room_x_max or z < room_y_min or z > room_y_max:
                 continue
             # for 1 user for now
-            sys_set_variables("user_detection", [{"x": x, "y": z, "time": detect_time}])
+            sys_set_variables(
+                "user_detection",
+                [{"x": x, "y": z, "time": datetime.datetime.now().isoformat()}],
+            )
+        sys_set_variables(
+            "try_detect", {"success": datetime.datetime.now().isoformat()}
+        )
 
 
 if __name__ == "__main__":
