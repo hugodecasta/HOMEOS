@@ -9,6 +9,8 @@ import time
 processes = []
 stop_event = threading.Event()
 
+forbidden_prints = ["variable_server.py", "server.py"]
+
 
 def stream_output(proc, proc_id, script_name, padding):
     def reader(stream):
@@ -16,7 +18,7 @@ def stream_output(proc, proc_id, script_name, padding):
             if stop_event.is_set():
                 break
             txt = line.rstrip("\n")
-            if txt:
+            if txt and not script_name in forbidden_prints:
                 print(f"[cmd{proc_id} - {script_name}] {padding}-- {txt}")
         stream.close()
 

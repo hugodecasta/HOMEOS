@@ -41,7 +41,11 @@ def front_files(path):
 @app.route("/api/module_names", methods=["GET"])
 def api_get_module_names():
     names = os.listdir("front/modules")
-    names = [name[:-3] for name in names if name.endswith(".js")]
+    names = [
+        name[:-3]
+        for name in names
+        if name.endswith(".js") and not name.startswith("__")
+    ]
     return jsonify(names)
 
 
