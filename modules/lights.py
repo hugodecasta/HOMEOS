@@ -79,6 +79,7 @@ def run():
             if var_name in caches and caches[var_name] == required_value:
                 continue
             caches[var_name] = required_value
+            print(device_name, required_value)
             set_device(device_name, required_value)
         time.sleep(0.016)  # 60 fps
 

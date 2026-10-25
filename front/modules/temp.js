@@ -11,16 +11,21 @@ export async function render() {
         temp: 0,
         need_temp: false,
         min_temp: 0,
+        linked_light: "---"
     }
 
     const temp_comp = div().set_style({ fontSize: "20px" }).add("--°C")
     const time_comp = div().set_style({ fontSize: "10px" }).add("---")
     const chauf_comp = div().set_style({ borderRadius: "1000px", width: "20px", height: "20px" })
+    const light_comp = input("----", "text", (ll) => set_variable("temp_link_light", ll), true, true)
     const min_temp_field = input(data.min_temp, "number", (mt) => set_variable("min_temp", parseFloat(mt)), true, true)
+
     comp.add(
         temp_comp,
         time_comp,
         chauf_comp,
+        "Linked light:",
+        light_comp, br(),
         "Min temp:",
         min_temp_field, "°C"
     )
@@ -29,11 +34,13 @@ export async function render() {
 
         const temperature = await get_variable("temperature")
         const need_chauff = await get_variable("need_chauf")
+        const linked_light = await get_variable("temp_link_light")
         const temp_time = await get_variable("temp_time")
         const min_temp = await get_variable("min_temp")
 
         temp_comp.clear().add(temperature)
         time_comp.clear().add(temp_time)
+        light_comp.value = linked_light
         chauf_comp.set_style({ background: need_chauff ? "#ee7f00" : "#d3d3d3" })
         min_temp_field.value = min_temp
 

@@ -68,6 +68,9 @@ def run():
     if sys_get_variable("min_temp") is None:
         sys_set_variables("min_temp", 22.5)
 
+    if sys_get_variable("temp_link_light") is None:
+        sys_set_variables("temp_link_light", "...")
+
     lastTemp = sys_get_variable("temperature")
     if lastTemp is None:
         lastTemp = 0
@@ -87,10 +90,11 @@ def run():
         gps_status = sys_get_variable("gps_status")
         is_home = gps_status.get("is_home")
 
-        zone_cache = sys_get_variable("light_zone_cache")
-        ordi_on = zone_cache.get("Ordi", 0) == 1
+        linked_light = sys_get_variable("temp_link_light")
 
-        need_chauf = ordi_on and is_home and temperature < min_temp
+        light_on = sys_get_variable(f"{linked_light}_state")
+
+        need_chauf = light_on and is_home and temperature < min_temp
 
         sys_set_variables("need_chauf", need_chauf)
         switch_chauffage(need_chauf)
